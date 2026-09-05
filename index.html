@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive MCQ Exam - শৈবাল ও ছত্রাক</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #1e293b;
+            --border: #e2e8f0;
+            --correct: #16a34a;
+            --wrong: #dc2626;
+            --unanswered: #d97706;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            padding: 15px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .header-card {
+            grid-column: 1 / -1;
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .timer-box {
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+
+        .card {
+            background: var(--card-bg);
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .question-title {
+            font-size: 1.15rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .pdf-ref {
+            font-size: 0.85rem;
+            color: #64748b;
+            margin-bottom: 15px;
+            display: inline-block;
+            background: #f1f5f9;
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+
+        .options-list {
+            list-style: none;
+        }
+
+        .option-item {
+            margin-bottom: 10px;
+        }
+
+        .option-label {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .option-label:hover {
+            border-color: var(--primary);
+            background: #eff6ff;
+        }
+
+        .option-label input {
+            margin-right: 12px;
+            width: 18px;
+            height: 18px;
+        }
+
+        .nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-hover); }
+        .btn-secondary { background: #64748b; color: white; }
+        .btn-secondary:hover { background: #475569; }
+        .btn-submit { background: #16a34a; color: white; }
+        .btn-submit:hover { background: #15803d; }
+
+        .palette-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+            margin-top: 15px;
+        }
+
+        .palette-btn {
+            padding: 8px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: var(--card-bg);
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .palette-btn.active { border-color: var(--primary); border-width: 2px; }
+        .palette-btn.answered { background: #dbeafe; color: #1e40af; border-color: #93c5fd; }
+        .palette-btn.correct { background: #dcfce7; color: #166534; border-color: #86efac; }
+        .palette-btn.wrong { background: #fee2e2; color: #991b1b; border-color: #fca5a5; }
+
+        .result-box {
+            display: none;
+            grid-column: 1 / -1;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .stat-card {
+            background: #f8fafc;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid var(--border);
+        }
+
+        .stat-val {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+
+        .option-review {
+            pointer-events: none;
+        }
+
+        .option-review.is-correct {
+            border-color: var(--correct) !important;
+            background-color: #f0fdf4 !important;
+        }
+
+        .option-review.is-wrong {
+            border-color: var(--wrong) !important;
+            background-color: #fef2f2 !important;
+        }
+
+        .badge {
+            font-size: 0.8rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-left: 8px;
+            font-weight: bold;
+        }
+
+        .badge-correct { background: #dcfce7; color: #166534; }
+        .badge-wrong { background: #fee2e2; color: #991b1b; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header-card">
+        <div>
+            <h2>শৈবাল ও ছত্রাক - Model Test</h2>
+            <p style="color: #64748b; font-size: 0.9rem;">মোট প্রশ্ন: 40 | সময়: 15 মিনিট</p>
+        </div>
+        <div class="timer-box" id="timer">15:00</div>
+    </div>
+
+    <div id="exam-area">
+        <div class="card">
+            <span class="pdf-ref" id="q-ref">PDF Reference</span>
+            <div class="question-title" id="q-text">Question loading...</div>
+            <ul class="options-list" id="q-options"></ul>
+            <div id="review-status" style="margin-top: 15px; font-weight: bold;"></div>
+            
+            <div class="nav-buttons">
+                <button class="btn btn-secondary" id="btn-prev" onclick="navigate(-1)">Previous</button>
+                <button class="btn btn-primary" id="btn-next" onclick="navigate(1)">Next</button>
+            </div>
+        </div>
+    </div>
+
+    <div>
+        <div class="card">
+            <h3>Question Navigation</h3>
+            <div class="palette-grid" id="palette"></div>
+            <div style="margin-top: 20px;">
+                <button class="btn btn-submit" style="width: 100%;" id="btn-finish" onclick="submitExam()">Submit Exam</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="card result-box" id="result-area">
+        <h2>Exam Result Summary</h2>
+        <div class="stats-grid">
+            <div class="stat-card">Total Questions<div class="stat-val" id="res-total">40</div></div>
+            <div class="stat-card">Correct<div class="stat-val" style="color:var(--correct);" id="res-correct">0</div></div>
+            <div class="stat-card">Wrong<div class="stat-val" style="color:var(--wrong);" id="res-wrong">0</div></div>
+            <div class="stat-card">Unanswered<div class="stat-val" style="color:var(--unanswered);" id="res-unanswered">0</div></div>
+            <div class="stat-card">Positive Marks<div class="stat-val" id="res-pos">0</div></div>
+            <div class="stat-card">Negative Marks<div class="stat-val" id="res-neg">0</div></div>
+            <div class="stat-card">Final Score<div class="stat-val" id="res-score">0</div></div>
+            <div class="stat-card">Percentage<div class="stat-val" id="res-pct">0%</div></div>
+        </div>
+        <p style="text-align: center; color: #64748b;">You can now review all questions and see correct answers using the navigation panel above.</p>
+    </div>
+</div>
+
+<script>
+const questions = [
+    { pdfRef: "Page 1 - Algae Q01", text: "০১। শৈবাল বিষয়ে কোনটি সঠিক?", options: { a: "(a) লোহিত শৈবাল কোরাল প্রাচীর গঠন করে", b: "(b) সবুজ এবং লাল শৈবাল মিলিত হয়ে লাইকেন গঠন করে", c: "(c) ডায়টমে ফিউকোজেনথিন নামক রঞ্জক থাকে", d: "(d) সোনালী-হলুদ শৈবাল জলজ বাস্তুতন্ত্র নষ্ট করে" }, correct: "a" },
+    { pdfRef: "Page 1 - Algae Q02", text: "০২। কোন শৈবাল থেকে গবেষকগণ ন্যানোফিল্টার তৈরি করেছেন?", options: { a: "(a) Sargassum", b: "(b) Gracilaria", c: "(c) Pithophora", d: "(d) Spirulina" }, correct: "c" },
+    { pdfRef: "Page 1 - Algae Q03", text: "০৩। ডায়াটম বিষয়ে কোনটি সঠিক?", options: { a: "(a) সবুজ বর্ণের হয়", b: "(b) জলজ বাস্তুতন্ত্রের উৎপাদক", c: "(c) সামুদ্রিক শ্যাওলা (moss) হিসাবে পরিচিত", d: "(d) ঔষুধি গুণ আছে" }, correct: "b" },
+    { pdfRef: "Page 1 - Algae Q04", text: "০৪। শৈবাল বিষয়ে কোনটি সঠিক?", options: { a: "(a) মাইটোটিক কোষ বিভাজন", b: "(b) কোষপ্রাচীর লিপিড ও প্রোটিন দ্বারা গঠিত", c: "(c) স্বভোজী", d: "(d) আদিকোষী জীব" }, correct: "c" },
+    { pdfRef: "Page 1 - Algae Q05", text: "০৫। শ্যাওলাগুলোর (algae) (অযৌন প্রজনন কোনটি দ্বারা সম্পন্ন হয়?", options: { a: "(a) Rhizoid", b: "(b) Fragmentation", c: "(c) Tuber", d: "(d) Spore" }, correct: "d" },
+    { pdfRef: "Page 1 - Algae Q06", text: "০৬। \"ফ্ল্যাজেলাযুক্ত স্পোর\" কী নামে অবহিত?", options: { a: "(a) Aplanospore", b: "(b) Resting spore", c: "(c) Zoospore", d: "(d) Hypnospore" }, correct: "c" },
+    { pdfRef: "Page 1 - Algae Q07", text: "০৭। অগ্নিশৈবাল (Fire Algae) নামে পরিচিত নিচের কোনটি?", options: { a: "(a) Euglenophyta", b: "(b) Pyrrophyta", c: "(c) Chrysophyta", d: "(d) Phaeophyta" }, correct: "b" },
+    { pdfRef: "Page 1 - Algae Q08", text: "০৮। নিচের কোনটি বাদামী শৈবালের (Phacophyta) সঞ্চিত খাদ্য নয়?", options: { a: "(a) ম্যানিটল", b: "(b) স্টার্চ", c: "(c) ল্যামিনারিন", d: "(d) এলগিন" }, correct: "b" },
+    { pdfRef: "Page 1 - Algae Q09", text: "০৯। এককোষী নিশ্চল শৈবাল কোনটি?", options: { a: "(a) Navicula", b: "(b) Volvox", c: "(c) Hydrodictyon", d: "(d) Chlorella" }, correct: "d" },
+    { pdfRef: "Page 1 - Algae Q10", text: "১০। কোনটি পাতা সদৃশ শৈবাল?", options: { a: "(a) Ulothrix", b: "(b) Chlorella", c: "(c) Chara", d: "(d) Ulva" }, correct: "d" },
+    { pdfRef: "Page 1 - Algae Q11", text: "১১। পাথরের গায়ে জন্মায় যে শৈবাল তাকে কী বলে?", options: { a: "(a) হ্যালোফাইট", b: "(b) লিথোফাইট", c: "(c) এপিফাইট", d: "(d) জেরোফাইট" }, correct: "b" },
+    { pdfRef: "Page 1 - Algae Q12", text: "১২। কোনটি লোহিত শৈবাল?", options: { a: "(a) Spirogyra", b: "(b) Navicula", c: "(c) Polysiphonia", d: "(d) Fragilaria" }, correct: "c" },
+    { pdfRef: "Page 1 - Algae Q13", text: "১৩। কোনটি শৈবালের অযৌন জনন?", options: { a: "(a) হরমোগোনিয়া", b: "(b) খণ্ডায়ন", c: "(c) বাডিং", d: "(d) জুস্পোর" }, correct: "d" },
+    { pdfRef: "Page 1 - Algae Q14", text: "১৪। কোনটি ডায়াটম?", options: { a: "(a) Spirogyra", b: "(b) Navicula", c: "(c) Polysiphonia", d: "(d) Volvox" }, correct: "b" },
+    { pdfRef: "Page 1 - Algae Q15", text: "১৫। কেল্প ফরেস্ট গঠনকারী শৈবাল কোনটি?", options: { a: "(a) Spirogyra", b: "(b) Macrocystis", c: "(c) Volvox", d: "(d) Polysiphonia" }, correct: "b" },
+    { pdfRef: "Page 1 - Algae Q16", text: "১৬। ডেনড্রয়েড গঠন বিশিষ্ট শৈবাল কোনটি?", options: { a: "(a) Chara", b: "(b) Prasinocladus", c: "(c) Spirogyra", d: "(d) Polysiphonia" }, correct: "b" },
+    { pdfRef: "Page 1 - Algae Q17", text: "১৭। একটি পূর্ণাঙ্গ ডায়াটমের সিলিকাময় কোষপ্রাচীরকে কী বলে?", options: { a: "(a) পেরিপ্লাস্ট", b: "(b) পাইরিনয়েড", c: "(c) ভলিউটিন", d: "(d) ফ্রুস্টিউল" }, correct: "d" },
+    { pdfRef: "Page 1 - Algae Q18", text: "১৮। শৈবালের লাল বর্ণের জন্য দায়ী কোন পদার্থ?", options: { a: "(a) ফিওফাইসিন", b: "(b) ফিউকোজ্যান্থিন", c: "(c) ফাইকোইরিথ্রিন", d: "(d) ফাইকোসায়ানিন" }, correct: "c" },
+    { pdfRef: "Page 2 - Ulothrix Q01", text: "০১। Ulothrix শৈবালের ক্লোরোপ্লাস্টের আকৃতি কীরূপ?", options: { a: "(a) গার্ডেলাকৃতির", b: "(b) গোলাকার", c: "(c) পিপাকৃতির", d: "(d) অর্ধবৃত্তাকার" }, correct: "a" },
+    { pdfRef: "Page 2 - Ulothrix Q02", text: "০২। Ulothrix এর অযৌন জুস্পোর কত ফ্ল্যাজেলা বিশিষ্ট?", options: { a: "(a) ২-৪", b: "(b) ৩-৬", c: "(c) ৪-৮", d: "(d) ৮-১০" }, correct: "a" },
+    { pdfRef: "Page 2 - Ulothrix Q03", text: "০৩। হ্যাপ্লনটিক টাইপ জীবনচক্র ঘটে কোন শৈবালে?", options: { a: "(a) Ulothrix", b: "(b) Urospora", c: "(c) Sargassum", d: "(d) Coleochaeta" }, correct: "a" },
+    { pdfRef: "Page 2 - Ulothrix Q04", text: "০৪। Ulothrix এর ম্যাক্রোচলরেণুতে কতটি ফ্ল্যাজেলা থাকে?", options: { a: "(a) ১টি", b: "(b) ২টি", c: "(c) ৪টি", d: "(d) ৮টি" }, correct: "c" },
+    { pdfRef: "Page 2 - Ulothrix Q06", text: "০৬। Ulothrix এর যৌন জননে কোষের প্রোটোপ্লাস্ট কতগুলো খণ্ডে বিভক্ত হয়?", options: { a: "(a) ৮ - ১০টি", b: "(b) ১৬ - ৬৪ টি", c: "(c) ৭০ - ৮০টি", d: "(d) ১০০ - ১৬০টি" }, correct: "b" },
+    { pdfRef: "Page 2 - Ulothrix Q07", text: "০৭। Ulothrix এর জাইগোট কতটি ফ্ল্যাজেলা নিয়ে গঠিত?", options: { a: "(a) দুটি", b: "(b) চারটি", c: "(c) আটটি", d: "(d) ষোলটি" }, correct: "b" },
+    { pdfRef: "Page 2 - Ulothrix Q08", text: "০৮। একটি গ্যামিট থেকে পূর্ণাঙ্গ Ulothrix তৈরির প্রক্রিয়া কোনটি?", options: { a: "(a) অ্যাপোস্পোরি", b: "(b) পার্থেনোজেনেসিস", c: "(c) অ্যাপোগ্যামি", d: "(d) ডিপ্লয়েড পার্থেনোজেনেসিস" }, correct: "b" },
+    { pdfRef: "Page 2 - Ulothrix Q09", text: "০৯। আংটি আকৃতির ক্লোরোপ্লাস্ট পাওয়া যায় নিচের কোনটিতে?", options: { a: "(a) Spirogyra", b: "(b) Oedogonium", c: "(c) Volvox", d: "(d) Ulothrix" }, correct: "d" },
+    { pdfRef: "Page 2 - Ulothrix Q10", text: "১০। নিচের কোনটি সঠিক?", options: { a: "(a) Chlorella হলো এককোষী, সচল শৈবাল", b: "(b) Agaricus আলুর বিলম্বিত ধ্বসা রোগ সৃষ্টি করে", c: "(c) Ulothrix এর জাইগোট ৪-ফ্ল্যাজেলাবিশিষ্ট", d: "(d) Penicillium কনিডিয়ার দ্বারা যৌন জনন ঘটায়" }, correct: "c" },
+    { pdfRef: "Page 2 - Ulothrix Q11", text: "১১। কোন উদ্ভিদের ক্লোরোপ্লাস্টে পাইরিনয়েড থাকে?", options: { a: "(a) Nostoc", b: "(b) Ulothrix", c: "(c) Riccia", d: "(d) Cycas" }, correct: "b" },
+    { pdfRef: "Page 2 - Ulothrix Q12", text: "১২। Ulothrix sp. এ কোন প্রকার গ্যামিটের মিল?", options: { a: "(a) আইসোগ্যামাস", b: "(b) অ্যানাইসোগ্যামাস", c: "(c) উগ্যামাস", d: "(d) গ্যামিটোজেনেসিস" }, correct: "a" },
+    { pdfRef: "Page 3 - Fungi Q01", text: "০১। ফল, রুটি এবং অন্যান্য খাদ্যের উপরে কোন ছত্রাক জন্মায়?", options: { a: "(a) মুগুর ছত্রাক", b: "(b) ডিম্ব ছত্রাক", c: "(c) থলি ছত্রাক", d: "(d) জাইগোট ছত্রাক" }, correct: "d" },
+    { pdfRef: "Page 3 - Fungi Q02", text: "০২। একশত গ্রাম মাশরুমে কত গ্রাম শর্করা থাকে?", options: { a: "(a) 8-9 grams", b: "(b) 2-4 grams", c: "(c) 5-6 grams", d: "(d) 4-5 grams" }, correct: "a" },
+    { pdfRef: "Page 3 - Fungi Q03", text: "০৩। ছত্রাকের বৈশিষ্ট্য কোনটি?", options: { a: "(a) বৃদ্ধি ও পুষ্টিতে আলোর প্রয়োজন হয়।", b: "(b) দেহ মূল, কাণ্ড ও পাতায় বিভক্ত", c: "(c) দেহে সঞ্চিত খাদ্য থাকে না", d: "(d) যৌন ও অযৌন উপায়ে বংশবৃদ্ধি করে" }, correct: "d" },
+    { pdfRef: "Page 3 - Fungi Q04", text: "০৪। ছত্রাক কোষ প্রাচীরের প্রধান উপাদান কোনটি?", options: { a: "(a) Chitin", b: "(b) Cellulose", c: "(c) Glycogen", d: "(d) Starch" }, correct: "a" },
+    { pdfRef: "Page 3 - Fungi Q06", text: "০৬। বর্ণাধার নেই, এমন উদ্ভিদ হলো-", options: { a: "(a) ছত্রাক", b: "(b) ব্যাকটেরিয়া", c: "(c) শৈবাল", d: "(d) মস" }, correct: "a" },
+    { pdfRef: "Page 3 - Fungi Q07", text: "০৭। ছত্রাকের সঞ্চিত খাদ্য-", options: { a: "(a) সেলুলোজ", b: "(b) চর্বি ও প্রোটিন", c: "(c) গ্লাইকোজেন ও সেলুলোজ", d: "(d) গ্লাইকোজেন ও তৈল বিন্দু" }, correct: "d" },
+    { pdfRef: "Page 3 - Fungi Q08", text: "০৮। ছত্রাকের সঞ্চিত খাবার কী?", options: { a: "(a) স্টার্চ", b: "(b) প্রোটিন", c: "(c) গ্লাইকোজেন", d: "(d) লিপিড" }, correct: "c" },
+    { pdfRef: "Page 3 - Fungi Q09", text: "০৯। কোন ছত্রাকে Coenocytic মাইসেলিয়াম থাকে?", options: { a: "(a) Penicillium", b: "(b) Agaricus", c: "(c) Aspergillus", d: "(d) Mucor" }, correct: "d" },
+    { pdfRef: "Page 3 - Fungi Q10", text: "১০। ছত্রাকের কোষ প্রাচীরের প্রধান উপাদান কোনটি?", options: { a: "(a) কাইটিন", b: "(b) সেলুলোজ", c: "(c) স্টার্চ", d: "(d) গ্লাইকোজেন" }, correct: "a" },
+    { pdfRef: "Page 3 - Fungi Q11", text: "১১। ছত্রাকের সাধারণ বৈশিষ্ট্য কোনটি?", options: { a: "(a) আলোর উপর নির্ভরশীল", b: "(b) জননাঙ্গ বহুকোষী", c: "(c) পরিবহন টিস্যু আছে", d: "(d) কোষপ্রাচীর কাইটিন নির্মিত" }, correct: "d" },
+    { pdfRef: "Page 3 - Fungi Q12", text: "১২। কোন ছত্রাকটি জলজ?", options: { a: "(a) Saprolegnia", b: "(b) Rhizopus", c: "(c) Aspergilus", d: "(d) Cercospora" }, correct: "a" },
+    { pdfRef: "Page 3 - Fungi Q13", text: "১৩। কোন ছত্রাক অন্ধকারে আলোক বিচ্ছুরণ ঘটায়?", options: { a: "(a) Noctiluca", b: "(b) Rhizopus", c: "(c) Mucor", d: "(d) Agaricus" }, correct: "d" }
+];
+
+let currentIndex = 0;
+let userAnswers = {};
+let isSubmitted = false;
+let timeLeft = 15 * 60;
+let timerInterval;
+
+function startTimer() {
+    timerInterval = setInterval(() => {
+        timeLeft--;
+        let m = Math.floor(timeLeft / 60);
+        let s = timeLeft % 60;
+        document.getElementById('timer').innerText = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        
+        if (timeLeft <= 0) {
+            clearInterval(timerInterval);
+            submitExam();
+        }
+    }, 1000);
+}
+
+function renderPalette() {
+    const p = document.getElementById('palette');
+    p.innerHTML = '';
+    questions.forEach((q, idx) => {
+        const btn = document.createElement('button');
+        btn.className = 'palette-btn';
+        btn.innerText = idx + 1;
+        
+        if (idx === currentIndex) btn.classList.add('active');
+        
+        if (isSubmitted) {
+            const ans = userAnswers[idx];
+            if (ans === q.correct) btn.classList.add('correct');
+            else if (ans) btn.classList.add('wrong');
+        } else if (userAnswers[idx]) {
+            btn.classList.add('answered');
+        }
+
+        btn.onclick = () => {
+            currentIndex = idx;
+            loadQuestion();
+        };
+        p.appendChild(btn);
+    });
+}
+
+function loadQuestion() {
+    const q = questions[currentIndex];
+    document.getElementById('q-ref').innerText = `Serial: ${currentIndex + 1}/40 | ${q.pdfRef}`;
+    document.getElementById('q-text').innerText = q.text;
+    
+    const opts = document.getElementById('q-options');
+    opts.innerHTML = '';
+
+    for (let k in q.options) {
+        const li = document.createElement('li');
+        li.className = 'option-item';
+        
+        const label = document.createElement('label');
+        label.className = 'option-label';
+        
+        const radio = document.createElement('input');
+        radio.type = 'radio';
+        radio.name = 'opt';
+        radio.value = k;
+        radio.checked = userAnswers[currentIndex] === k;
+        radio.disabled = isSubmitted;
+
+        radio.onchange = () => {
+            if (!isSubmitted) {
+                userAnswers[currentIndex] = k;
+                renderPalette();
+            }
+        };
+
+        if (isSubmitted) {
+            label.classList.add('option-review');
+            if (k === q.correct) {
+                label.classList.add('is-correct');
+            } else if (userAnswers[currentIndex] === k) {
+                label.classList.add('is-wrong');
+            }
+        }
+
+        label.appendChild(radio);
+        label.appendChild(document.createTextNode(` ${q.options[k]}`));
+        
+        if (isSubmitted) {
+            if (k === q.correct) {
+                const badge = document.createElement('span');
+                badge.className = 'badge badge-correct';
+                badge.innerText = 'Correct Answer';
+                label.appendChild(badge);
+            } else if (userAnswers[currentIndex] === k) {
+                const badge = document.createElement('span');
+                badge.className = 'badge badge-wrong';
+                badge.innerText = 'Your Answer';
+                label.appendChild(badge);
+            }
+        }
+
+        li.appendChild(label);
+        opts.appendChild(li);
+    }
+
+    document.getElementById('btn-prev').disabled = currentIndex === 0;
+    document.getElementById('btn-next').disabled = currentIndex === questions.length - 1;
+
+    const revStat = document.getElementById('review-status');
+    if (isSubmitted) {
+        const uAns = userAnswers[currentIndex];
+        if (!uAns) {
+            revStat.innerHTML = '<span style="color:var(--unanswered)">Not Answered (0 Marks)</span>';
+        } else if (uAns === q.correct) {
+            revStat.innerHTML = '<span style="color:var(--correct)">Correct (+1 Mark)</span>';
+        } else {
+            revStat.innerHTML = '<span style="color:var(--wrong)">Incorrect (-0.25 Mark)</span>';
+        }
+    } else {
+        revStat.innerHTML = '';
+    }
+
+    renderPalette();
+}
+
+function navigate(dir) {
+    currentIndex += dir;
+    if (currentIndex < 0) currentIndex = 0;
+    if (currentIndex >= questions.length) currentIndex = questions.length - 1;
+    loadQuestion();
+}
+
+function submitExam() {
+    if (!isSubmitted && timeLeft > 0) {
+        if (!confirm("Are you sure you want to submit the exam?")) return;
+    }
+    
+    isSubmitted = true;
+    clearInterval(timerInterval);
+    document.getElementById('timer').innerText = "Finished";
+    document.getElementById('btn-finish').style.display = 'none';
+
+    let correct = 0;
+    let wrong = 0;
+    let unanswered = 0;
+
+    questions.forEach((q, idx) => {
+        const ans = userAnswers[idx];
+        if (!ans) unanswered++;
+        else if (ans === q.correct) correct++;
+        else wrong++;
+    });
+
+    const posMarks = correct * 1;
+    const negMarks = wrong * 0.25;
+    const finalScore = posMarks - negMarks;
+    const pct = ((finalScore / 40) * 100).toFixed(2);
+
+    document.getElementById('res-correct').innerText = correct;
+    document.getElementById('res-wrong').innerText = wrong;
+    document.getElementById('res-unanswered').innerText = unanswered;
+    document.getElementById('res-pos').innerText = `+${posMarks}`;
+    document.getElementById('res-neg').innerText = `-${negMarks}`;
+    document.getElementById('res-score').innerText = finalScore;
+    document.getElementById('res-pct').innerText = `${pct}%`;
+
+    document.getElementById('result-area').style.display = 'block';
+    loadQuestion();
+}
+
+window.onload = () => {
+    startTimer();
+    loadQuestion();
+};
+</script>
+</body>
+</html>
